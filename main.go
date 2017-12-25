@@ -17,7 +17,7 @@ const folderName = "slack-downloads"
 func main() {
 	godotenv.Load()
 	slackToken := flag.String("token", os.Getenv("SLACK_API_TOKEN"), "Set Slack API Token")
-	fileType := flag.String("type", "", "Set file type")
+	fileType := flag.String("type", "all", "Set file type")
 	includePrivate := flag.Bool("private", false, "Download private files")
 	doDelete := flag.Bool("delete", false, "Delete downloaded files from Slack")
 	flag.Parse()

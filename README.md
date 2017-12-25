@@ -21,6 +21,6 @@ $ slack-filesave -token=xxxxxx-xxxxxxxxx -type=image
 | name | description | default | require |
 | :--- | :---------- | :-----: | :-----: |
 | token | your slack api token |  | true |
-| type | filter file type |  |  |
+| type | filter file type | all |  |
 | private | include private files | false |  |
 | delete | delete downloaded file from slack | false |  |
