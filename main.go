@@ -16,11 +16,12 @@ const folderName = "slack-downloads"
 
 func main() {
 	godotenv.Load()
-	slackToken := *flag.String("token", os.Getenv("SLACK_API_TOKEN"), "Set Slack API Token")
-	fileType := *flag.String("type", "image", "Set file type")
+	slackToken := flag.String("token", os.Getenv("SLACK_API_TOKEN"), "Set Slack API Token")
+	fileType := flag.String("type", "", "Set file type")
+	flag.Parse()
 
-	api := slack.New(slackToken)
-	files, paging, err := getFiles(api, fileType, 1)
+	api := slack.New(*slackToken)
+	files, paging, err := getFiles(api, *fileType, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -39,10 +40,10 @@ func main() {
 				continue
 			}
 			waitGroup.Add(1)
-			go write(&waitGroup, slackFile, slackToken)
+			go write(&waitGroup, slackFile, *slackToken)
 		}
 		log.Printf("files size: %d, paging: %#v\n", len(files), paging)
-		files, paging, err = getFiles(api, fileType, paging.Page+1)
+		files, paging, err = getFiles(api, *fileType, paging.Page+1)
 		if err != nil {
 			log.Fatal(err)
 		}
