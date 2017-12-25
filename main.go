@@ -18,6 +18,7 @@ func main() {
 	godotenv.Load()
 	slackToken := flag.String("token", os.Getenv("SLACK_API_TOKEN"), "Set Slack API Token")
 	fileType := flag.String("type", "", "Set file type")
+	includePrivate := flag.Bool("private", false, "Download private files.")
 	flag.Parse()
 
 	api := slack.New(*slackToken)
@@ -32,7 +33,7 @@ func main() {
 	waitGroup := sync.WaitGroup{}
 	for paging.Page <= paging.Pages {
 		for _, slackFile := range files {
-			if !slackFile.IsPublic {
+			if !*includePrivate && !slackFile.IsPublic {
 				continue
 			}
 			if _, err := os.Stat(getFileName(slackFile)); err == nil {
