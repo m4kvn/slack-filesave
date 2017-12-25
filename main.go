@@ -10,7 +10,6 @@ import (
 	"sync"
 	"fmt"
 	"flag"
-	"time"
 )
 
 const folderName = "slack-downloads"
@@ -19,7 +18,6 @@ func main() {
 	godotenv.Load()
 	slackToken := *flag.String("token", os.Getenv("SLACK_API_TOKEN"), "Set Slack API Token")
 	fileType := *flag.String("type", "image", "Set file type")
-	doDelete := *flag.Bool("delete", false, "Deleting files from Slack")
 
 	api := slack.New(slackToken)
 	files, paging, err := getFiles(api, fileType, 1)
@@ -30,7 +28,6 @@ func main() {
 		os.Mkdir(folderName, 0777)
 	}
 
-	deleteQue := make(chan string)
 	waitGroup := sync.WaitGroup{}
 	for paging.Page <= paging.Pages {
 		for _, slackFile := range files {
@@ -51,28 +48,7 @@ func main() {
 		}
 	}
 
-	stopDelete := make(chan struct{})
-	deleteWaitGroup := sync.WaitGroup{}
-	if doDelete {
-	deleteLoop:
-		for {
-			select {
-			case fileId := <-deleteQue:
-				deleteWaitGroup.Add(1)
-				err := api.DeleteFile(fileId)
-				if err != nil {
-					log.Println(err)
-				}
-				deleteWaitGroup.Done()
-				time.Sleep(1100)
-			case <-stopDelete:
-				break deleteLoop
-			}
-		}
-	}
 	waitGroup.Wait()
-	close(stopDelete)
-	deleteWaitGroup.Wait()
 }
 
 func write(waitGroup *sync.WaitGroup, slackFile slack.File, slackToken string) {
