@@ -18,7 +18,8 @@ func main() {
 	godotenv.Load()
 	slackToken := flag.String("token", os.Getenv("SLACK_API_TOKEN"), "Set Slack API Token")
 	fileType := flag.String("type", "", "Set file type")
-	includePrivate := flag.Bool("private", false, "Download private files.")
+	includePrivate := flag.Bool("private", false, "Download private files")
+	doDelete := flag.Bool("delete", false, "Delete downloaded files from Slack")
 	flag.Parse()
 
 	api := slack.New(*slackToken)
@@ -30,6 +31,9 @@ func main() {
 		os.Mkdir(folderName, 0777)
 	}
 
+	slackFileDeleter := newInstance()
+	go slackFileDeleter.run(api)
+
 	waitGroup := sync.WaitGroup{}
 	for paging.Page <= paging.Pages {
 		for _, slackFile := range files {
@@ -37,11 +41,13 @@ func main() {
 				continue
 			}
 			if _, err := os.Stat(getFileName(slackFile)); err == nil {
-				log.Println("Already exists", slackFile.URLPrivateDownload)
+				if *doDelete {
+					slackFileDeleter.delete(slackFile.ID)
+				}
 				continue
 			}
 			waitGroup.Add(1)
-			go write(&waitGroup, slackFile, *slackToken)
+			go write(&waitGroup, slackFile, *slackToken, *doDelete, slackFileDeleter)
 		}
 		log.Printf("files size: %d, paging: %#v\n", len(files), paging)
 		files, paging, err = getFiles(api, *fileType, paging.Page+1)
@@ -51,9 +57,10 @@ func main() {
 	}
 
 	waitGroup.Wait()
+	slackFileDeleter.stop()
 }
 
-func write(waitGroup *sync.WaitGroup, slackFile slack.File, slackToken string) {
+func write(waitGroup *sync.WaitGroup, slackFile slack.File, slackToken string, doDelete bool, deleter SlackFileDeleter) {
 	defer waitGroup.Done()
 	req, err := http.NewRequest("GET", slackFile.URLPrivateDownload, nil)
 	req.Header.Set("Authorization", "Bearer "+slackToken)
@@ -81,6 +88,10 @@ func write(waitGroup *sync.WaitGroup, slackFile slack.File, slackToken string) {
 		return
 	}
 	log.Printf("Download finished: %s\n", slackFile.URLPrivateDownload)
+
+	if doDelete {
+		deleter.delete(slackFile.ID)
+	}
 }
 
 func getFiles(api *slack.Client, fileType string, page int) ([]slack.File, *slack.Paging, error) {
