@@ -1,6 +1,6 @@
 # slack-filesave
 
-## install
+## Install
 
 require Golang environment and setup GOPATH.
 
@@ -8,7 +8,7 @@ require Golang environment and setup GOPATH.
 $ go get github.com/hashibiroko/slack-filesave
 ```
 
-## usage
+## Usage
 
 set user slack api token.
 
@@ -16,7 +16,7 @@ set user slack api token.
 $ slack-filesave -token=xxxxxx-xxxxxxxxx -type=image
 ```
 
-### flags
+### Flags
 
 | name | description | default | require |
 | :--- | :---------- | :-----: | :-----: |
