@@ -39,7 +39,6 @@ func (s *SlackFileDeleter) run(api *slack.Client) {
 			s.deleteWaitGroup.Done()
 			time.Sleep(1 * time.Second)
 		case <-s.StopChan:
-			close(s.DeleteQue)
 			return
 		}
 	}
