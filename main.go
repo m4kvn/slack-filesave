@@ -10,6 +10,7 @@ import (
 	"sync"
 	"fmt"
 	"flag"
+	"time"
 )
 
 const folderName = "slack-downloads"
@@ -18,12 +19,13 @@ func main() {
 	godotenv.Load()
 	slackToken := flag.String("token", os.Getenv("SLACK_API_TOKEN"), "Set Slack API Token")
 	fileType := flag.String("type", "all", "Set file type")
+	beforeTimestamp := flag.Int64("before", time.Now().Unix(), "Set file timestamp (file older than this timestamp will be the target)")
 	includePrivate := flag.Bool("private", false, "Download private files")
 	doDelete := flag.Bool("delete", false, "Delete downloaded files from Slack")
 	flag.Parse()
 
 	api := slack.New(*slackToken)
-	files, paging, err := getFiles(api, *fileType, 1)
+	files, paging, err := getFiles(api, *fileType, *beforeTimestamp, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -50,7 +52,7 @@ func main() {
 			go write(&waitGroup, slackFile, *slackToken, *doDelete, slackFileDeleter)
 		}
 		log.Printf("files size: %d, paging: %#v\n", len(files), paging)
-		files, paging, err = getFiles(api, *fileType, paging.Page+1)
+		files, paging, err = getFiles(api, *fileType, *beforeTimestamp, paging.Page+1)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -94,11 +96,12 @@ func write(waitGroup *sync.WaitGroup, slackFile slack.File, slackToken string, d
 	}
 }
 
-func getFiles(api *slack.Client, fileType string, page int) ([]slack.File, *slack.Paging, error) {
+func getFiles(api *slack.Client, fileType string, beforeTimestamp int64, page int) ([]slack.File, *slack.Paging, error) {
 	return api.GetFiles(slack.GetFilesParameters{
 		Types: fileType,
 		Count: 1000,
 		Page:  page,
+		TimestampTo: slack.JSONTime(beforeTimestamp), 
 	})
 }
 
