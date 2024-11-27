@@ -5,7 +5,7 @@
 require Golang environment and setup GOPATH.
 
 ```
-$ go get github.com/hashibiroko/slack-filesave
+$ go get github.com/m4kvn/slack-filesave
 ```
 
 ## Usage
